@@ -40,6 +40,7 @@ classdef Copter < matlab.System
             data.theta = 0;
             % data.ang_vel = 0;
             data.thrust = 0;
+            data.fnet = [0,0,0];
             data.rpm = 0;
             data.capacity = obj.battery.cap;
             data.error = [];
@@ -143,7 +144,6 @@ classdef Copter < matlab.System
             % Find charge consumed [mAh]
             Q_con = I_con*dt*1000/3600;
             obj.data.capacity(end+1) = obj.data.capacity(end) - Q_con;
-            
         end
         
         
@@ -194,7 +194,6 @@ classdef Copter < matlab.System
             end
             obj.thrust.currentVec = eye(3) * [0 0 currentThrust]';
             obj.data.thrust(end+1) = obj.thrust.currentVec(3);
-            
         end
     end
 end
