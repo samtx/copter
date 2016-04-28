@@ -29,7 +29,7 @@ classdef Copter < matlab.System
             armLength = prop.length / sin(pi/prop.num);
             massPerL = 0.045;   % mass of carbon fiber tube [kg/m]
             armMass = armLength * massPerL;
-            obj.chassis.mass = obj.chassis.mass + armMass;
+            obj.chassis.mass = obj.chassis.mass + armMass*prop.num;
             
             % total mass
             obj.mass = obj.get_total_mass();
