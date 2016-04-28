@@ -25,12 +25,6 @@ classdef Copter < matlab.System
             obj.chassis = chas;
             obj.control = cont;
             
-            % build frame                                     **.MC-4/28.**
-            armLength = prop.length / sin(pi/prop.num);
-            massPerL = 0.045;   % mass of carbon fiber tube [kg/m]
-            armMass = armLength * massPerL;
-            obj.chassis.mass = obj.chassis.mass + armMass;
-            
             % total mass
             obj.mass = obj.get_total_mass();
             
@@ -40,6 +34,7 @@ classdef Copter < matlab.System
             data.theta = 0;
             % data.ang_vel = 0;
             data.thrust = 0;
+            data.fnet = [0,0,0];
             data.rpm = 0;
             data.capacity = obj.battery.cap;
             data.error = [];
@@ -68,7 +63,6 @@ classdef Copter < matlab.System
             obj.status=status;
         end
         
-        
         function mass = get_total_mass(obj)
             % calculate the toal mass
             mass = obj.payload.mass + ...
@@ -78,14 +72,6 @@ classdef Copter < matlab.System
                 (obj.propeller.mass * obj.propeller.num) + ...
                 (obj.motor.mass * obj.motor.num);
         end
-        
-        
-        function [] = update_atm(obj)
-            obj.atm.temperature = 15.04 - .00649 * obj.data.position(end,3); % [C]
-            obj.atm.pressure = 101.29 * ((obj.atm.temperature+273.1)/288.08)^5.256; % [K-Pa]
-            obj.atm.density = obj.atm.pressure/(0.2869*(obj.atm.temperature+273.1)); % [kg/m^3]
-        end
-        
         
         function [] = thrust_limits(obj)    % mc 4/6 added max thrust equation
             % calculate the maximun and minimum thrust
@@ -110,42 +96,6 @@ classdef Copter < matlab.System
             % find air density
             obj.update_atm();
         end
-        
-        
-        function [] = update_battery(obj,dt)
-            % calculate the energy drained from the battery
-            Vb = obj.battery.volt;           % bat voltage (V)
-            C = obj.battery.cap;             % battery capacity (mAh)
-            C_rate = obj.battery.c_rate;     % battery C-rating (1/h)
-            cp = obj.propeller.cp;           % coeff of power
-            d = obj.propeller.length;        % prop diameter (m)
-            num_prop = obj.propeller.num;    % number of propellers
-            n = obj.data.rpm(end)/60;        % prop rot speed (rev/s)
-            Ra = obj.motor.resistance;       % internal resistance (ohms)
-            rho = obj.atm.density;                   % density of air (kg/m3)
-            
-            % Find power consumed (W) from each propeller  Eqn.(2)
-            P_req = cp * rho * n^3 * d^5;
-            %fprintf('Power consumed = %4.2f W\n',P);
-            
-            % can't use more power than max power for motor
-            P_max = obj.motor.max_watt;  % motor maximum wattage (W)
-            P_con = min(P_req, P_max);
-            % Find total power consumed (W)
-            P_tot = P_con * num_prop;
-            
-            % Find current consumption (A)
-            % current = power/(motor voltage)
-            I_req = P_tot/Vb;
-            I_max = (C/1000) * C_rate;
-            I_con = min(I_req, I_max);
-            
-            % Find charge consumed [mAh]
-            Q_con = I_con*dt*1000/3600;
-            obj.data.capacity(end+1) = obj.data.capacity(end) - Q_con;
-            
-        end
-        
         
         function [] = thrust_controller(obj,dt)
             % Compute the necessary thrust
@@ -196,6 +146,48 @@ classdef Copter < matlab.System
             obj.data.thrust(end+1) = obj.thrust.currentVec(3);
             
         end
+        
+        function [] = update_battery(obj,dt)
+            % calculate the energy drained from the battery
+            Vb = obj.battery.volt;           % bat voltage (V)
+            C = obj.battery.cap;             % battery capacity (mAh)
+            C_rate = obj.battery.c_rate;     % battery C-rating (1/h)
+            cp = obj.propeller.cp;           % coeff of power
+            d = obj.propeller.length;        % prop diameter (m)
+            num_prop = obj.propeller.num;    % number of propellers
+            n = obj.data.rpm(end)/60;        % prop rot speed (rev/s)
+            Ra = obj.motor.resistance;       % internal resistance (ohms)
+            rho = obj.atm.density;                   % density of air (kg/m3)
+            
+            % Find power consumed (W) from each propeller  Eqn.(2)
+            P_req = cp * rho * n^3 * d^5;
+            %fprintf('Power consumed = %4.2f W\n',P);
+            
+            % can't use more power than max power for motor
+            P_max = obj.motor.max_watt;  % motor maximum wattage (W)
+            P_con = min(P_req, P_max);
+            % Find total power consumed (W)
+            P_tot = P_con * num_prop;
+            
+            % Find current consumption (A)
+            % current = power/(motor voltage)
+            I_req = P_tot/Vb;
+            I_max = (C/1000) * C_rate;
+            I_con = min(I_req, I_max);
+            
+            % Find charge consumed [mAh]
+            Q_con = I_con*dt*1000/3600;
+            obj.data.capacity(end+1) = obj.data.capacity(end) - Q_con;
+            
+        end
+        
+        function [] = update_atm(obj)
+            obj.atm.temperature = 15.04 - .00649 * obj.data.position(end,3); % [C]
+            obj.atm.pressure = 101.29 * ((obj.atm.temperature+273.1)/288.08)^5.256; % [K-Pa]
+            obj.atm.density = obj.atm.pressure/(0.2869*(obj.atm.temperature+273.1)); % [kg/m^3]
+        end
+        
     end
+    
 end
 
