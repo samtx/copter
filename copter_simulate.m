@@ -3,7 +3,7 @@ function [ J ] = copter_simulate(batmass,motmass,propmass,numprop,paymass,missio
 % fprintf('\ntry\n');
 % fprintf('bat=%4.4e mot=%4.4e prop=%4.4e pay=%3.3e num=%3.3e\n',x);
 
-print_output = true;
+print_output = false;
 
 if isDiscrete
     % Load discrete copter components
