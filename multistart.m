@@ -7,6 +7,10 @@ clear all
 close all
 % use fmincon to find setup with maximum battery life
 
+% save workspace to .mat file at end
+date = datestr(now,'yyyymmddHHMMSS');
+fname = ['multistart_fmincon_',date,'.mat'];
+
 
 % Create Parallel Pool of up four workers
 c = gcp('nocreate');
@@ -113,4 +117,4 @@ fprintf('Total Run time = %.2f sec  (%.2f min)\n',[t1end,t1end/60]);
 %     fprintf('\n');
 % end
 
-save('multistart.mat');
+save(fname);
