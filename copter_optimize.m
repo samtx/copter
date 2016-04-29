@@ -1,5 +1,7 @@
 function [history] = copter_optimize(x0,lb,ub,scale,isDiscrete,objFlag)
 
+print_output = false;
+
 if isempty(isDiscrete)
     isDiscrete = false;  % default continuous
 end
@@ -30,18 +32,23 @@ mission.zbuffer  =  10; % buffer height to stop accelerating as going upward [m]
 mission.complete =   0;
 mission.target_velocity = 10;
 
-% function to optimize
-fun = @(x) copter_simulate(x(1),...  % battery mass
-                           x(2),...  % motor mass
-                           x(3),...  % propeller mass
-                           0,...  % payload mass
-                           4,...  % number of propellers
-                           mission,... % mission parameters
-                           scale,...  % scaling
-                           isDiscrete,...
-                           objFlag);  % which objective
+numprop = x0(4);
+paymass = x0(5);
+x0(4:5) = [];  % remove design variables from initial vector
 
-                 
+% function to optimize
+fun = @(x) copter_simulate(...
+    x(1),...    % battery mass
+    x(2),...    % motor mass
+    x(3),...    % propeller mass
+    numprop,... % number of propellers
+    paymass,... % payload mass
+    mission,... % mission parameters
+    scale,...   % scaling
+    isDiscrete,...
+    objFlag);  % 1=maxtime, 2=maxpayload
+
+
 if isDiscrete
     % heuristic constrained minimization function
     IntCon = [1,2,3];
@@ -50,22 +57,25 @@ if isDiscrete
     opts.UseParallel = true;
     opts.Display = 'iter';
     opts.PlotFcns = {@gaplotbestf @gaplotbestindiv @gaplotdistance};
-    [x,fval,exitflag,output,pop,scores] = ga(fun,3,[],[],[],[],...
-        lb,ub,[],IntCon,opts);
+    %     [x,fval,exitflag,output,pop,scores] = ga(fun,3,[],[],[],[],...
+    %         lb,ub,[],IntCon,opts);
+    ga(fun,3,[],[],[],[],lb,ub,[],IntCon,opts);
 else
     % use gradient-based constrained optimization
     opts = optimoptions('fmincon');
-    opts.Display = 'iter';
+    opts.Display = 'none';
     opts.OutputFcn = @myoutfun;
     opts.DiffMinChange = 1e-4;
-    opts.UseParallel = true;
-%     opts.Algorithm = 'sqp';
-    fprintf('Begin optimization...\n');
-    fprintf('fmincon optimoptions:\n')
-    fprintf('   .DiffMinChange = %6e\n',opts.DiffMinChange);
-    opts
-    fprintf(' iter |  t (min) | bat mass | mot mass | prop mass| pay mass | prop num |\n');
-      
+    opts.UseParallel = false;
+    %     opts.Algorithm = 'sqp';
+    if print_output
+        opts.Display = 'iter-detailed';
+        fprintf('Begin optimization...\n');
+        fprintf('fmincon optimoptions:\n')
+        fprintf('   .DiffMinChange = %6e\n',opts.DiffMinChange);
+        opts
+        fprintf(' iter |  t (min) | bat mass | mot mass | prop mass| prop num | pay mass |\n');
+    end
     fmincon(fun,x0,[],[],[],[],lb,ub,[],opts);
 end
 
