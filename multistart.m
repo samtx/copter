@@ -61,6 +61,9 @@ allhist = cell(N,1);  % cell array to store opt history for each run
 runtime = zeros(N,2);  % store runtimes for each optimization
 x0 = zeros(N,5);  % all initial points
 
+% time step
+dt = 0.1;
+
 j = 1;
 for i = 1:m
     % Pick random start for batmass, motmass, propmass
@@ -91,7 +94,7 @@ parfor i = 1:N
 %     t2 = tic;
     thisx0 = x0(i,:);
     fprintf('begin optimizer for i=%d\n',i);
-    hist = copter_optimize(thisx0,lb,ub,scale,isDiscrete,objFlag);
+    hist = copter_optimize(thisx0,lb,ub,scale,isDiscrete,objFlag,dt);
 %     fprintf('finished optimizer for i=%d\n',i);
     %times(i,:) = [hist.x(end,:), -hist.fval(end)/60];
 %     t2end = toc(t2);
