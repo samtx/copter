@@ -9,24 +9,22 @@ close all
 
 
 % Create Parallel Pool of up four workers
-c = gcp('nocreate');
-if c.Connected
-    if c.NumWorkers ~= 4;
-        delete(gcp)
-    end
-else
-    parpool('local',4)
-end
+% c = gcp('nocreate');
+% if c.Connected
+%     if c.NumWorkers ~= 4;
+%         delete(gcp)
+%     end
+% else
+%     parpool('local',4)
+% end
 
 
-% Do this a few times
-bigloop = 1;
-while bigloop <= 4
+for bigloop = 1:3
     
     % save workspace to .mat file at end
     date = datestr(now,'yyyymmddHHMMSS');
-    fname = ['multistart_fmincon_',date,'.mat'];
-    
+    fpath = './data/';  % put in data folder
+    fname = [fpath,'multistart_fmincon_',date,'.mat'];
     
     
     % Set up optimization function
@@ -59,17 +57,18 @@ while bigloop <= 4
         lb = [0.095, 0.032, 0.0071];   % with continuous design vars
         ub = [0.618, 0.079, 0.0250];
     end
-    
     numprop = [4,6,8];  % propeller configurations
-    m = 5;  % number of random starts
+    
+    % 
+    % -----------------------------------------
+    m = 5;      % ***   NUMBER OF RANDOM STARTS     ***
+    dt = 0.1;   % ***         TIME STEP             ***
+    
     N = m * length(numprop);  % total number of trials
     times = zeros(N,6);
     allhist = cell(N,1);  % cell array to store opt history for each run
     runtime = zeros(N,2);  % store runtimes for each optimization
     x0 = zeros(N,5);  % all initial points
-    
-    % time step
-    dt = 0.1;
     
     j = 1;
     for i = 1:m
@@ -112,6 +111,9 @@ while bigloop <= 4
         %     flighttime = -hist.fval(end)/60;
         fprintf('\n Completed Opt for i = %3d\n',i);
         %     fprintf('%10d |%16.5|\n\n',[i,flighttime]);
+        
+        % add numprop and paymass back to hist.x array of iterations
+        hist.x = [hist.x, repmat(thisx0(4:5),[size(hist.x,1),1])];
         allhist{i} = hist;
         fprintf('...stored hist for i = %3d\n',i);
         %     fprintf('\n CompltOpt#| RunSplt(min)| RunTotl(min)| FlightTime(min)|\n');
@@ -128,5 +130,4 @@ while bigloop <= 4
     % end
     
     save(fname);
-    bigloop = bigloop + 1;
 end
