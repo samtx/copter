@@ -1,6 +1,10 @@
-function [history] = copter_optimize(x0,lb,ub,scale,isDiscrete,objFlag)
+function [history] = copter_optimize(x0,lb,ub,scale,isDiscrete,objFlag,dt)
 
 print_output = false;
+
+if isempty(dt)
+    dt = 0.1;
+end
 
 if isempty(isDiscrete)
     isDiscrete = false;  % default continuous
@@ -46,7 +50,8 @@ fun = @(x) copter_simulate(...
     mission,... % mission parameters
     scale,...   % scaling
     isDiscrete,...
-    objFlag);  % 1=maxtime, 2=maxpayload
+    objFlag,... % 1=maxtime, 2=maxpayload
+    dt);        % time step
 
 
 if isDiscrete
