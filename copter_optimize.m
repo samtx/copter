@@ -36,7 +36,7 @@ mission.zbuffer  =  10; % buffer height to stop accelerating as going upward [m]
 mission.complete =   0;
 mission.target_velocity = 10;
 
-numprop = x0(4);
+% numprop = x0(4);
 paymass = x0(5);
 x0(4:5) = [];  % remove design variables from initial vector
 
@@ -45,7 +45,7 @@ fun = @(x) copter_simulate(...
     x(1),...    % battery mass
     x(2),...    % motor mass
     x(3),...    % propeller mass
-    numprop,... % number of propellers
+    x(4),... % number of propellers
     paymass,... % payload mass
     mission,... % mission parameters
     scale,...   % scaling
@@ -56,7 +56,7 @@ fun = @(x) copter_simulate(...
 
 if isDiscrete
     % heuristic constrained minimization function
-    IntCon = [1,2,3];
+    IntCon = [1,2,3,4];
     opts = gaoptimset('ga');
     opts.OutputFcn = @myoutfun;
     opts.UseParallel = true;
@@ -64,11 +64,12 @@ if isDiscrete
     opts.PlotFcns = {@gaplotbestf @gaplotbestindiv @gaplotdistance};
     %     [x,fval,exitflag,output,pop,scores] = ga(fun,3,[],[],[],[],...
     %         lb,ub,[],IntCon,opts);
-    ga(fun,3,[],[],[],[],lb,ub,[],IntCon,opts);
+    ga(fun,4,[],[],[],[],lb,ub,[],IntCon,opts);
 else
     % use gradient-based constrained optimization
     opts = optimoptions('fmincon');
-    opts.Display = 'none';
+    opts.Display = 'iter-detailed';
+    opts.MutationFcn = {@mutationuniform, 0.1};
     opts.OutputFcn = @myoutfun;
     opts.DiffMinChange = 1e-4;
     opts.UseParallel = false;

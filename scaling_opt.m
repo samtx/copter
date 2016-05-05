@@ -74,7 +74,7 @@ for bigloop = 1:1
     
     %
     % -----------------------------------------
-    m = 10;      % ***   NUMBER OF RANDOM STARTS     ***
+    m = 1;      % ***   NUMBER OF RANDOM STARTS     ***
     dt = 0.1;   % ***         TIME STEP             ***
     
     
@@ -82,32 +82,36 @@ for bigloop = 1:1
     scale = struct;
     % scale.all = 1;
     scale.batt = 1;
-    scale.mot = 1;
-    scale.prop = 1;
+    scale.mot = 10;
+    scale.prop = 10;
     scale.num = 1;
     scale.pay = 1;
     scale.timemult = 1e-5;
     scale.timeadd = 0;
     scale.vector = [scale.batt, scale.mot, scale.prop, scale.num, scale.pay];
     
-    N = m * length(numprop);  % total number of trials
-    times = zeros(N,6);
+    %     N = m * length(numprop);  % total number of trials
+    N = 1;
+    %     times = zeros(N,6);
     allhist = cell(N,1);  % cell array to store opt history for each run
-    runtime = zeros(N,2);  % store runtimes for each optimization
-    x0 = zeros(N,5);  % all initial points
+    %     runtime = zeros(N,2);  % store runtimes for each optimization
+    %     x0 = zeros(N,5);  % all initial points
     
-    j = 1;
-    for i = 1:m
-        % Pick random start for batmass, motmass, propmass
-        randstart = rand(1,3).*(ub-lb)+lb;
-        x0(j:j+2,1:3) = repmat(randstart,[3,1]);
-        x0(j:j+2,4) = numprop';  % use a different prop config for each setup
-        x0(j:j+2,5) = zeros(3,1);  % payload mass = zero, constant
-        j = j + 3;
-    end
+    %     j = 1;
+    %     for i = 1:m
+    %         % Pick random start for batmass, motmass, propmass
+    %         randstart = rand(1,3).*(ub-lb)+lb;
+    %         x0(j:j+2,1:3) = repmat(randstart,[3,1]);
+    %         x0(j:j+2,4) = numprop';  % use a different prop config for each setup
+    %         x0(j:j+2,5) = zeros(3,1);  % payload mass = zero, constant
+    %         j = j + 3;
+    %     end
+    
+    % Previously defined optimum solution
+    x0 = [0.618, 0.032, 0.0250, 8, 0.0];
     
     % apply scaling
-    x0 = x0 .* repmat(scale.vector,[size(x0,1),1]);   
+    x0 = x0 .* scale.vector;
     
     fprintf('Scaling factors...\n');
     disp(scale);
@@ -116,7 +120,7 @@ for bigloop = 1:1
     
     % Run optimization
     fprintf('Initial points, x0, with scaling...\n');
-     
+    
     disp(x0)
     fprintf('Run optimzation for %d starting points\n',N);
     t1 = tic;
