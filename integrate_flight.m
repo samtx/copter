@@ -1,4 +1,4 @@
-function [copter] = integrate_flight(copter,mission,tmax,dt)
+function [Y,copter] = integrate_flight(copter,mission,tmax,dt)
 % Implements an integrator (fourth order Runge-Kutta) for the ODE system
 %
 % Input Parameters
@@ -24,11 +24,10 @@ hovering = false;
 batt_low = false;
 batt_dead = false;
 mission.complete=false;
-batt_low_fraction = 0.05;
 
 %initalize variables for t=0
-Y=[copter.data.velocity copter.data.position]';  % Output vector*********************
-% can give launch params************
+Y=[copter.data.velocity copter.data.position]';
+
 if print_output_to_screen
     fprintf('mass(kg) = %6.3f     weight(N) = %6.3f  \n',[copter.mass,copter.mass*copter.atm.gravity]);
     fprintf('time(sec) | alt(m) | vel(m/s) | acc(m/s2) | bat(mAh) | Thrust(N) |  T net(N) | Fnet(N) |   RPMs   |\n');
@@ -39,7 +38,7 @@ while t<tmax && ~mission.complete
     %% Conditions for phases
     % launch
     if t == 0 && copter.data.position(end,3) < 10  % drive to altitude
-        copter.control.target_velocity=10;
+        copter.control.target_velocity=mission.target_velocity;
         %         fprintf('launch\n')
     end
     % hover
@@ -50,7 +49,7 @@ while t<tmax && ~mission.complete
     end
     % descend after 10mins
     if ~descending && (t>(tmax*.99) || batt_low)
-        copter.control.target_velocity=-8;
+        copter.control.target_velocity=-.8*mission.target_velocity;
         %         fprintf('descent\n')
         descending = true;
     end
@@ -58,7 +57,7 @@ while t<tmax && ~mission.complete
         copter.control.target_velocity=-1;
         % fprintf('land: care\n')
     elseif descending && copter.data.position(end,3) < 20
-        copter.control.target_velocity=-4;
+        copter.control.target_velocity=-.4*mission.target_velocity;
         % fprintf('land: slow\n')
     end
     
@@ -93,7 +92,7 @@ while t<tmax && ~mission.complete
     if  copter.data.position(end,3)<-1   % *sif 3/29/2016 indent for readability
         mission.complete=true;
     end  % *sif 3/29/16 change to logical operator
-    if (copter.data.capacity(end) < batt_low_fraction* copter.battery.cap) && ~batt_low % *sif 3/29/16 change to logical operator
+    if (copter.data.capacity(end) < copter.battery.low_fraction* copter.battery.cap) && ~batt_low % *sif 3/29/16 change to logical operator
         batt_low=true;  % *sif 3/29/16 change to logical operator
         %         fprintf('WARNING: Battery low %d\n',t/60)
     end
