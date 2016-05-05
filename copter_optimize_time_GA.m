@@ -2,24 +2,25 @@
 clc
 clear all
 close all
-% use fmincon to find setup with maximum battery life
 
-% Set up optimization function
+% scale.batt=1;   % 10
+% scale.mot=1;    % 100
+% scale.prop=1;   % 300
+% scale.pay=1;    % 3
+% scale.num=1;
+% scale.all=[scale.batt scale.mot scale.prop scale.pay scale.num];
 
-
-
-% load copter variables
-copter_vars = load_vars();
-
-scale.batt=1;   % 10
-scale.mot=1;    % 100
-scale.prop=1;   % 300
-scale.pay=1;    % 3
-scale.num=1;
-scale.all=[scale.batt scale.mot scale.prop scale.pay scale.num];
-
-
-
+% ------------ SCALING ---------------------------
+scale = struct;
+% scale.all = 1;
+scale.batt = 1;
+scale.mot = 10;
+scale.prop = 10;
+scale.num = 1;
+scale.pay = 1;
+scale.timemult = 1e-5;
+scale.timeadd = 0;
+scale.vector = [scale.batt, scale.mot, scale.prop, scale.num, scale.pay];
 
 % design variables
 %     x(1) = battery
@@ -32,26 +33,16 @@ scale.all=[scale.batt scale.mot scale.prop scale.pay scale.num];
 % battery mass between 0.095 and 0.618
 % motor mass between 0.032 and 0.079
 % propeller mass between 0.0071 and 0.025
-% payload mass between 0 and 2.5
+% payload mass 0
 
 lb = [0.095*scale.batt;
       0.032*scale.mot;
-      0.0071*scale.prop;
-      0.5*scale.pay;
-      4*scale.num]';
-% lb=.999*lb;
-  
+      0.0071*scale.prop]';
 ub = [0.618*scale.batt;
       0.079*scale.mot;
-      0.025*scale.prop;
-      2.5*scale.pay;
-      8*scale.num]';
-% ub=1.001*ub;
+      0.025*scale.prop;]';
+paymass = 0;
 
-% Initial Points for Copter Optimization
-% randomize initial guess
-% x0 = lb + (ub-lb).*rand(1,length(ub));
-  
 % Mission variables / Flight plan constants
 mission.z0 = 0;   % initial altitude [m]
 mission.zf = 100; % final altitude [m]
@@ -62,34 +53,38 @@ mission.complete=0;
 mission.target_velocity = 10;
 
 % what are wanting to optimize?
-opt_flag = 1;  % maximize time
+objFlag = 1;  % maximize time
 % opt_flag = 2;  % maximize altitude 
 % opt_flag = 3; % maximize payload mass
 
+isDiscrete=false;
+dt=.1;
+numprop=4;
 
 % function to optimize
-fun = @(x) copter_simulate(x,mission,opt_flag,scale);
+fun = @(x) copter_simulate(...
+    x(1),...    % battery mass
+    x(2),...    % motor mass
+    x(3),...    % propeller mass
+    numprop,... % number of propellers
+    paymass,... % payload mass
+    mission,... % mission parameters
+    scale,...   % scaling
+    isDiscrete,...
+    objFlag,... % 1=maxtime, 2=maxpayload
+    dt);        % time step
 
-% options=optimoptions('fmincon','Display','iter');
-% options = optimoptions(@fmincon,'Algorithm','interior-point',...
-%                         'Display','iter','PlotFcn',@optimplotfval,...
-%                         'OptimalityTolerance',1e-14);
-options = optimoptions(@ga,'Display','iter','PlotFcn',@gaplotbestf);
-options.UseParallel = true;
+% OPTIONS----------------------------------------------------------------
+opts = optimoptions(@ga,'Display','iter','PlotFcn',...
+    @gaplotbestf,'UseParallel',true);
+% opts.UseVectorized=true;
+% try dec stall time  
 
-% constrained minimization function
-% [x,fval,exitflag,output] = fmincon(fun,x0,[],[],[],[],lb,ub,[],options);
-[x,fval,exitflag,output] = ga(fun,5,[],[],[],[],lb,ub,[],options);
-
-% x0./scale.all
-x./scale.all
-
-% fprintf('Opt Result');
-% fprintf('battery ', );
-% fprintf('motor ');
-% fprintf('propeller ');
-% fprintf('rotors ');
-% fprintf('total mass ');
+for n=[1,2,3]
+    numprop=2*n+2;
+    % constrained minimization function
+    [xval(n),fval(n),exitflag(n),output(n)] = ga(fun,3,[],[],[],[],lb,ub,[],opts);
+end
 
 % for x = 0.6180    0.0320    0.0250    0.5000    7.9991
 % flight time           14.87 mins
