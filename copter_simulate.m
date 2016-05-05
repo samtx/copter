@@ -1,9 +1,13 @@
-function [ J ] = copter_simulate(batmass,motmass,propmass,numprop,paymass,mission,scale,isDiscrete,objFlag,dt)
+function [ J ] = copter_simulate(batmass,motmass,propmass,numprop,paymass,mission,scale,isDiscrete,objFlag,dt,useHover)
 
 % fprintf('\ntry\n');
 % fprintf('bat=%4.4e mot=%4.4e prop=%4.4e pay=%3.3e num=%3.3e\n',x);
 
 print_output = true;
+
+if isempty(useHover)
+    useHover = false;
+end
 
 if isDiscrete
     % Load discrete copter components
@@ -54,14 +58,18 @@ copter = Copter(bat,mot,prop,pay,chas,contr,r0,v0,a0);
 % save('copter_simulate.mat');
 
 % Simulate flight
-[~,cop] = integrate_flight(copter,mission,14400,dt);
+if useHover
+    cop = hover(copter);
+else
+    cop = integrate_flight(copter,mission,14400,dt);
+end
 
 if objFlag == 1
     % return the total flight time
     J = -cop.data.time(end)*scale.timemult + scale.timeadd;
-elseif objFlag == 2
-    % return the maximum flight altitude
-    J = -cop.data.position(:,3);
+% elseif objFlag == 2
+%     % return the maximum flight altitude
+%     J = -cop.data.position(:,3);
 end
 
 if print_output
