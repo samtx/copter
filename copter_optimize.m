@@ -1,6 +1,10 @@
-function [history] = copter_optimize(x0,lb,ub,scale,isDiscrete,objFlag,dt)
+function [history] = copter_optimize(x0,lb,ub,scale,isDiscrete,objFlag,dt,useHover)
 
-print_output = false;
+print_output = true;
+
+if isempty(useHover)
+    useHover = false;
+end
 
 if isempty(dt)
     dt = 0.1;
@@ -51,7 +55,8 @@ fun = @(x) copter_simulate(...
     scale,...   % scaling
     isDiscrete,...
     objFlag,... % 1=maxtime, 2=maxpayload
-    dt);        % time step
+    dt,...      % time step
+    useHover);  % use low-fidelity hover model
 
 
 if isDiscrete
