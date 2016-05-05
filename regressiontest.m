@@ -3,7 +3,7 @@
 %   m  =  mass [kg]
 % fit 2nd degree polynomial
 
-% vars = load_vars();
+vars = load_vars();
 % for i= 1:length(vars{1})
 % batcap(i) = vars{1}(i).cap;
 % batmass(i) = vars{1}(i).mass;
@@ -135,26 +135,64 @@ xx = linspace(min(propmass),max(propmass));
 
 figure;
 hold on
-title('Propeller Mass vs ct');
-plot(propmass,propct,'o');
-xlabel('prop mass');ylabel('prop ct');
+title('Propeller Mass vs C_t');
+plot(propmass,propct,'o','MarkerSize',15,'LineWidth',2);
+xlabel('Prop Mass');ylabel('Prop C_t');
 % linear fit
 s = polyfit(propmass,propct,1);
 yy1 = s(1).*xx + s(2);
 % fit 2nd degree polynomial
 yy2 = ( 70.57).*(xx.^2)  - (3.973).*xx + 0.1579;
-plot(xx,yy1,'-.k',xx,yy2,'--r')
+plot(xx,yy1,'-.k','LineWidth',2)
+plot(xx,yy2,'--r','LineWidth',2)
 %  fit 3rd degree poly
 s = polyfit(propmass,propct,3);
 yy3 = s(1).*xx.^3 + s(2).*xx.^2 + s(3).*xx + s(4);
-plot(xx,yy3,'-.m')
-legend('data points','linear','quadratic','cubic');
+plot(xx,yy3,'-.','Color',[0 0.498039215803146 0],'LineWidth',2)
+legend1 = legend('Data Points','Linear','Quadratic','Cubic');
+% = legend(axes1,'show');
+set(legend1,'FontSize',18,'Location','best');
+axis square
 return
 % fit 2nd degree polynomial
 length = -210.5*m^2 +15.27*m +0.1056;
 cp = 56.85*(m^2) - (3.297)*m + 0.1099;
 ct = 70.57*m^2 - 3.973*m + 0.1579;
 
+
+
+return
+% Create axes
+axes1 = axes('Parent',figure1);
+hold(axes1,'on');
+axis square
+% Create plot
+plot(X1,Y1,'DisplayName','data points','MarkerSize',15,'Marker','o',...
+    'LineWidth',2,...
+    'LineStyle','none');
+
+% Create multiple lines using matrix input to plot
+plot1 = plot(X2,YMatrix1,'LineWidth',2,'LineStyle','-.','Parent',axes1);
+set(plot1(1),'DisplayName','linear','Color',[0 0 0]);
+set(plot1(2),'DisplayName','quadratic','LineStyle','--',...
+    'Color',[0 0.498039215803146 0]);
+set(plot1(3),'DisplayName','cubic','MarkerSize',1,'Color',[1 0 1]);
+
+% Create xlabel
+xlabel('Prop mass (kg)','FontSize',15.4);
+
+% Create title
+title('Propeller Mass vs C_t','FontSize',15.4);
+
+% Create ylabel
+ylabel('Prop C_t','FontSize',15.4);
+
+box(axes1,'on');
+% Set the remaining axes properties
+set(axes1,'FontSize',14);
+% Create legend
+legend1 = legend(axes1,'show');
+set(legend1,'FontSize',18,'Location','best');
 
 
 

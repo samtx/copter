@@ -3,11 +3,15 @@ function [ J ] = copter_simulate(batmass,motmass,propmass,numprop,paymass,missio
 % fprintf('\ntry\n');
 % fprintf('bat=%4.4e mot=%4.4e prop=%4.4e pay=%3.3e num=%3.3e\n',x);
 
-print_output = false;
+print_output = true;
 
 if isDiscrete
     % Load discrete copter components
     [bat,mot,prop] = load_copter_components([batmass,motmass,propmass]);
+    pay.mass = paymass;
+    numprop = mod(numprop-1,3)*2+4;
+    prop.num = numprop;
+    mot.num = numprop;
 else
     % create copter object from design variables
     bat.mass = batmass/scale.batt;
@@ -54,14 +58,14 @@ copter = Copter(bat,mot,prop,pay,chas,contr,r0,v0,a0);
 
 if objFlag == 1
     % return the total flight time
-    J = -cop.data.time(end);
+    J = -cop.data.time(end)*scale.timemult + scale.timeadd;
 elseif objFlag == 2
     % return the maximum flight altitude
     J = -cop.data.position(:,3);
 end
 
 if print_output
-    fprintf('      |%10.6f|%10.6f|%10.6f|%10.6f|%9d |%10.6f|\n',[-J/60,...
+    fprintf('%17.12f|%10.6f|%10.6f|%10.6f|%9d |%10.6f|\n',[-J/60,...
         batmass,motmass,propmass,numprop,paymass]);
 end
 
