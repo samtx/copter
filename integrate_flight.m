@@ -1,4 +1,4 @@
-function [Y,copter] = integrate_flight(copter,mission,tmax,dt)
+function [copter] = integrate_flight(copter,mission,tmax,dt)
 % Implements an integrator (fourth order Runge-Kutta) for the ODE system
 %
 % Input Parameters
